@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>20241024</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+    <link rel="shortcut icon" href="../img/star.jpg">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<button onclick="getDataFromJSONFile()">get DATA</button>
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">Add DATA</button>
+<button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#editModal">Edit DATA</button>
+
+<div id="div_students"></div>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addModalLabel">Add Student</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                NAME: <input type="text" id="add_student_name" /><br>
+                AGE: <input type="number" id="add_student_age" /><br>
+                GENDER: 
+                <select id="add_student_gender">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="createDataToJSONFile()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel">Edit Student</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ID: <input type="text" id="edit_student_id" readonly /><br>
+                NAME: <input type="text" id="edit_student_name" /><br>
+                AGE: <input type="number" id="edit_student_age" /><br>
+                GENDER: 
+                <select id="edit_student_gender">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="updateDataToJSONFile()">Save changes</button>
+                <button type="button" class="btn btn-danger" onclick="deleteDataFromJSONFile()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let studentsData = []; // 데이터를 저장할 배열
+
+    // my_data.json 파일에서 데이터를 가져오는 함수
+    function getDataFromJSONFile() {
+        $.ajax({
+            url: 'my_data.json',
+            method: 'GET',
+            dataType: 'json',
+            success: function(students) {
+                studentsData = students; // 데이터를 전역 변수에 저장
+                displayStudents(); // 데이터를 화면에 표시
+            },
+            error: function() {
+                alert("데이터를 불러오는 중 오류가 발생했습니다.");
+            }
+        });
+    }
+
+    // 학생 데이터를 화면에 표시하는 함수
+    function displayStudents() {
+        $("#div_students").html(""); // 기존 내용을 지웁니다.
+
+        studentsData.forEach((item) => {
+            $("#div_students").append(
+                `<div onclick="loadStudentData('${item.id}')">
+                    ID: ${item.id}, 
+                    Name: ${item.name}, 
+                    Age: ${item.age}, 
+                    Gender: ${item.gender}
+                </div><br>`
+            );
+        });
+    }
+
+    // 새 데이터를 추가하는 함수
+    function createDataToJSONFile() {
+        let newStudent = {
+            id: (studentsData.length + 1).toString(), // 새 ID 생성
+            name: $("#add_student_name").val(),
+            age: $("#add_student_age").val(),
+            gender: $("#add_student_gender").val()
+        };
+
+        studentsData.push(newStudent); // 배열에 새 데이터 추가
+        displayStudents(); // 업데이트된 데이터를 화면에 표시
+        $('#addModal').modal('hide'); // 모달 닫기
+        alert("등록 성공!");
+    }
+
+    // 선택된 학생 데이터를 수정 모달에 로드하는 함수
+    function loadStudentData(id) {
+        const student = studentsData.find((item) => item.id === id);
+        if (student) {
+            $("#edit_student_id").val(student.id);
+            $("#edit_student_name").val(student.name);
+            $("#edit_student_age").val(student.age);
+            $("#edit_student_gender").val(student.gender);
+            $('#editModal').modal('show'); // Edit 모달을 보여줌
+        }
+    }
+
+    // 데이터를 업데이트하는 함수
+    function updateDataToJSONFile() {
+        const id = $("#edit_student_id").val();
+        const updatedStudent = {
+            id: id,
+            name: $("#edit_student_name").val(),
+            age: $("#edit_student_age").val(),
+            gender: $("#edit_student_gender").val()
+        };
+
+        const index = studentsData.findIndex((item) => item.id === id);
+        if (index !== -1) {
+            studentsData[index] = updatedStudent; // 배열에서 해당 학생 업데이트
+            displayStudents(); // 업데이트된 데이터를 화면에 표시
+            $('#editModal').modal('hide'); // 모달 닫기
+            alert("수정 성공!");
+        }
+    }
+
+    // 데이터를 삭제하는 함수
+    function deleteDataFromJSONFile() {
+        const id = $("#edit_student_id").val();
+        studentsData = studentsData.filter((item) => item.id !== id); // 배열에서 해당 학생 삭제
+        displayStudents(); // 업데이트된 데이터를 화면에 표시
+        $('#editModal').modal('hide'); // 모달 닫기
+        alert("삭제 성공!");
+    }
+
+    // 페이지가 로드되면 데이터를 가져옴
+    $(document).ready(function() {
+        getDataFromJSONFile();
+    });
+</script>
+</body>
+</html>
